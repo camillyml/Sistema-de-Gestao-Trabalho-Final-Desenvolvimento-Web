@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Vendas</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+    .container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 900px;
+    }
+    h1 { text-align: center; color: #0c001a; margin-bottom: 30px; }
+    .venda-card {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .venda-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .venda-id { font-size: 1.2em; font-weight: bold; color: purple; }
+    .venda-data { color: #666; }
+    .cliente-info { margin-bottom: 15px; }
+    .cliente-info p { margin: 5px 0; }
+    .itens-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .itens-table th {
+        background-color: purple;
+        color: white;
+        padding: 10px;
+        text-align: left;
+    }
+    .itens-table td {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+    .itens-table tr:last-child td { border-bottom: none; }
+    .loading, .error {
+        text-align: center;
+        padding: 20px;
+        font-size: 18px;
+    }
+    .error { color: #dc3545; }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        color: purple;
+        text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Lista de Vendas</h1>
+  <div id="vendasList"></div>
+  <a href="/" class="back-link">← Voltar para o início</a>
+</div>
+
+<script>
+  function formatarData(dataArray) {
+      if (!dataArray) return 'Data inválida';
+      const data = new Date(dataArray);
+      return data.toLocaleString('pt-BR');
+  }
+
+  function formatarMoeda(valor) {
+      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  async function carregarVendas() {
+      const vendasListDiv = document.getElementById('vendasList');
+      vendasListDiv.innerHTML = '<div class="loading">Carregando vendas...</div>';
+
+      try {
+          const response = await fetch('http://localhost:8080/vendas');
+          if (!response.ok) throw new Error('Erro ao buscar vendas');
+
+          const vendas = await response.json();
+          vendasListDiv.innerHTML = '';
+
+          if (vendas.length === 0) {
+              vendasListDiv.innerHTML = '<p>Nenhuma venda registrada.</p>';
+              return;
+          }
+
+          vendas.forEach(venda => {
+              const card = document.createElement('div');
+              card.className = 'venda-card';
+
+              const dataHora = formatarData(venda.dataHora);
+              const cliente = venda.cliente;
+
+              let itensHtml = '';
+              if (venda.itens && venda.itens.length > 0) {
+                  itensHtml = `
+                      <table class="itens-table">
+                          <thead>
+                              <tr>
+                                  <th>Produto</th>
+                                  <th>Qtd</th>
+                                  <th>Preço Unit.</th>
+                                  <th>Desc. (%)</th>
+                                  <th>Subtotal</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                  `;
+
+                  venda.itens.forEach(item => {
+                      const subtotal = item.quantidade * item.precoUnitario * (1 - (item.descontoPercentual || 0) / 100);
+                      itensHtml += `
+                          <tr>
+                              <td>${item.produto.nome}</td>
+                              <td>${item.quantidade}</td>
+                              <td>${formatarMoeda(item.precoUnitario)}</td>
+                              <td>${item.descontoPercentual || 0}%</td>
+                              <td>${formatarMoeda(subtotal)}</td>
+                          </tr>
+                      `;
+                  });
+
+                  itensHtml += '</tbody></table>';
+              } else {
+                  itensHtml = '<p>Nenhum item nesta venda.</p>';
+              }
+
+              card.innerHTML = `
+                  <div class="venda-header">
+                      <span class="venda-id">Venda #${venda.id}</span>
+                      <span class="venda-data">${dataHora}</span>
+                  </div>
+                  <div class="cliente-info">
+                      <p><strong>Cliente:</strong> ${cliente.nome} (CPF: ${cliente.cpf})</p>
+                  </div>
+                  ${itensHtml}
+              `;
+
+              vendasListDiv.appendChild(card);
+          });
+      } catch (error) {
+          vendasListDiv.innerHTML = `<div class="error">Erro: ${error.message}</div>`;
+      }
+  }
+
+  carregarVendas();
+</script>
+</body>
+</html>

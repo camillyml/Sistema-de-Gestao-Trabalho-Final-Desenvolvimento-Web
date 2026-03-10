@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Fornecedores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            text-align: center;
+            color: #0c001a;
+            margin-bottom: 30px;
+        }
+        .fornecedor-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .fornecedor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .fornecedor-nome {
+            font-size: 1.2em;
+            color: purple;
+            margin-bottom: 10px;
+        }
+        .fornecedor-detalhes {
+            color: #555;
+            font-size: 0.95em;
+        }
+        .fornecedor-detalhes p {
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .fornecedor-detalhes p:last-child {
+            border-bottom: none;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid purple;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: purple;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .fornecedor-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1> Lista de Fornecedores</h1>
+
+    <div id="fornecedoresList"></div>
+
+    <a href="/" class="back-link">← Voltar para o início</a>
+</div>
+
+<script>
+    async function carregarFornecedores() {
+        const fornecedoresListDiv = document.getElementById('fornecedoresList');
+        fornecedoresListDiv.innerHTML = '<div class="loading">Carregando fornecedores...</div>';
+
+        try {
+            const response = await fetch('http://localhost:8080/fornecedores');
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const fornecedores = await response.json();
+            fornecedoresListDiv.innerHTML = '';
+
+            if (fornecedores.length === 0) {
+                fornecedoresListDiv.innerHTML = '<p style="text-align: center; color: #666;">Nenhum fornecedor cadastrado.</p>';
+                return;
+            }
+
+            fornecedores.forEach(fornecedor => {
+                const card = document.createElement('div');
+                card.className = 'fornecedor-card';
+
+                card.innerHTML = `
+                    <div class="fornecedor-nome">${fornecedor.nome}</div>
+                    <div class="fornecedor-detalhes">
+                        <p><strong>ID:</strong> ${fornecedor.id}</p>
+                        <p><strong>CNPJ:</strong> ${fornecedor.cnpj}</p>
+                    </div>
+                `;
+
+                fornecedoresListDiv.appendChild(card);
+            });
+        } catch (error) {
+            fornecedoresListDiv.innerHTML = `<div class="error">❌ Erro: ${error.message}</div>`;
+        }
+    }
+
+    // Carrega os fornecedores quando a página abrir
+    carregarFornecedores();
+</script>
+</body>
+</html>

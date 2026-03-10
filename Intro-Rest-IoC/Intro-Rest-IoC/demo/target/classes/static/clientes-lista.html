@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Clientes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+    .container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 800px;
+    }
+    h1 { text-align: center; color: #0c001a; margin-bottom: 30px; }
+    .cliente-card {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .cliente-card h3 {
+        color: purple;
+        margin-bottom: 10px;
+    }
+    .cliente-card p {
+        margin: 5px 0;
+        color: #555;
+    }
+    .cliente-card strong { color: #333; }
+    .loading, .error {
+        text-align: center;
+        padding: 20px;
+        font-size: 18px;
+    }
+    .error { color: #dc3545; }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        color: purple;
+        text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Lista de Clientes</h1>
+  <div id="clientesList"></div>
+  <a href="/" class="back-link">← Voltar para o início</a>
+</div>
+
+<script>
+  async function carregarClientes() {
+      const clientesListDiv = document.getElementById('clientesList');
+      clientesListDiv.innerHTML = '<div class="loading">Carregando clientes...</div>';
+
+      try {
+          const response = await fetch('http://localhost:8080/clientes');
+          if (!response.ok) throw new Error('Erro ao buscar clientes');
+
+          const clientes = await response.json();
+          clientesListDiv.innerHTML = '';
+
+          if (clientes.length === 0) {
+              clientesListDiv.innerHTML = '<p>Nenhum cliente cadastrado.</p>';
+              return;
+          }
+
+          clientes.forEach(cliente => {
+              const card = document.createElement('div');
+              card.className = 'cliente-card';
+              card.innerHTML = `
+                  <h3>${cliente.nome}</h3>
+                  <p><strong>ID:</strong> ${cliente.id}</p>
+                  <p><strong>CPF:</strong> ${cliente.cpf}</p>
+                  <p><strong>Endereços:</strong> ${
+                      cliente.enderecos && cliente.enderecos.length > 0
+                          ? cliente.enderecos.map(e => e.endereco).join(', ')
+                          : 'Nenhum endereço cadastrado'
+                  }</p>
+              `;
+              clientesListDiv.appendChild(card);
+          });
+      } catch (error) {
+          clientesListDiv.innerHTML = `<div class="error">Erro: ${error.message}</div>`;
+      }
+  }
+
+  carregarClientes();
+</script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Produtos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        h1 {
+            text-align: center;
+            color: #0c001a;
+            margin-bottom: 30px;
+        }
+        .produto-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .produto-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .produto-info {
+            flex: 1;
+        }
+        .produto-nome {
+            font-size: 1.2em;
+            color: purple;
+            margin-bottom: 8px;
+        }
+        .produto-detalhes {
+            color: #555;
+            font-size: 0.95em;
+        }
+        .produto-detalhes p {
+            margin: 5px 0;
+        }
+        .produto-preco {
+            background-color: purple;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: center;
+            min-width: 150px;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid purple;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #purple;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .produto-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            .produto-preco {
+                margin-top: 15px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📋 Lista de Produtos</h1>
+
+    <div id="produtosList"></div>
+
+    <a href="/" class="back-link">← Voltar para o início</a>
+</div>
+
+<script>
+    function formatarMoeda(valor) {
+        return valor.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+    }
+
+    async function carregarProdutos() {
+        const produtosListDiv = document.getElementById('produtosList');
+        produtosListDiv.innerHTML = '<div class="loading">Carregando produtos...</div>';
+
+        try {
+            const response = await fetch('http://localhost:8080/produtos');
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const produtos = await response.json();
+            produtosListDiv.innerHTML = '';
+
+            if (produtos.length === 0) {
+                produtosListDiv.innerHTML = '<p style="text-align: center; color: #666;">Nenhum produto cadastrado.</p>';
+                return;
+            }
+
+            produtos.forEach(produto => {
+                const card = document.createElement('div');
+                card.className = 'produto-card';
+
+                card.innerHTML = `
+                    <div class="produto-info">
+                        <div class="produto-nome">${produto.nome}</div>
+                        <div class="produto-detalhes">
+                            <p><strong>ID:</strong> ${produto.id}</p>
+                        </div>
+                    </div>
+                    <div class="produto-preco">
+                        ${formatarMoeda(produto.preco)}
+                    </div>
+                `;
+
+                produtosListDiv.appendChild(card);
+            });
+        } catch (error) {
+            produtosListDiv.innerHTML = `<div class="error">❌ Erro: ${error.message}</div>`;
+        }
+    }
+
+    // Carrega os produtos quando a página abrir
+    carregarProdutos();
+</script>
+</body>
+</html>
